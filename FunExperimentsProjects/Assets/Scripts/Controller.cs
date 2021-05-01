@@ -10,12 +10,20 @@ public class Controller : MonoBehaviour
     private float speed = 0;
     [SerializeField]
     private Animator animator;
+    [SerializeField]
+    private CharacterController controller;
     Vector3 ang,angcam = Vector3.zero;
     public Transform cam;
-    
 
+    float smoothDampAngle;
+    float SmoothTurnTime = 0.1f;
+
+    private void Start()
+    {
+        controller = gameObject.GetComponent<CharacterController>();
+    }
     // Update is called once per frame
-    void LateUpdate()
+    void Update()
     {
         Move();
         Look();
@@ -56,8 +64,15 @@ public class Controller : MonoBehaviour
                 }  
             }
             //Moving Logic  
-            Vector3 MoveDirectionNormal = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-            transform.Translate(MoveDirectionNormal * speed * Time.deltaTime);
+            Vector3 MoveDirectionNormal = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")).normalized;
+            if (MoveDirectionNormal.magnitude >= 0.1f)
+            {
+                float targetAngle = Mathf.Atan2(MoveDirectionNormal.x , MoveDirectionNormal.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+                float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y , targetAngle , ref smoothDampAngle , SmoothTurnTime);
+                transform.rotation = Quaternion.Euler(0f , smoothAngle , 0f);
+                Vector3 moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+                controller.Move(moveDirection * speed * Time.deltaTime);
+            }  
         } 
     }
     void Look()
