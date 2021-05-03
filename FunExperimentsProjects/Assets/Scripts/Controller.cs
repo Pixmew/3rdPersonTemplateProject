@@ -23,10 +23,10 @@ public class Controller : MonoBehaviour
         controller = gameObject.GetComponent<CharacterController>();
     }
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         Move();
-        Look();
+        //Look();
     }
 
 
@@ -48,12 +48,7 @@ public class Controller : MonoBehaviour
         else //if there is some input
         {
             //if sprint/left-shift is pressed start Running
-            if (Input.GetAxis("Sprint") > 0)
-            {
-                speed = 5;
-                animator.SetBool("isRunning" , true);
-            }
-            else//if forward button is pressed start walking
+            if (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)
             {
                 speed = 2;
                 animator.SetBool("isWalking", true);
@@ -61,18 +56,23 @@ public class Controller : MonoBehaviour
                 if (animator.GetBool("isRunning") == true)
                 {
                     animator.SetBool("isRunning", false);
-                }  
+                }
             }
+            if(Input.GetAxis("Sprint") > 0)//if forward button is pressed start walking
+            {
+                speed = 5;
+                animator.SetBool("isRunning", true);
+            }
+            
             //Moving Logic  
             Vector3 MoveDirectionNormal = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")).normalized;
-            if (MoveDirectionNormal.magnitude >= 0.1f)
-            {
+            
                 float targetAngle = Mathf.Atan2(MoveDirectionNormal.x , MoveDirectionNormal.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
                 float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y , targetAngle , ref smoothDampAngle , SmoothTurnTime);
                 transform.rotation = Quaternion.Euler(0f , smoothAngle , 0f);
                 Vector3 moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
                 controller.Move(moveDirection * speed * Time.deltaTime);
-            }  
+             
         } 
     }
     void Look()
