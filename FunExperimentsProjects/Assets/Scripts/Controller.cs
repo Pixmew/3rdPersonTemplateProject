@@ -10,33 +10,60 @@ public class Controller : MonoBehaviour
     private float speed = 0;
     [SerializeField]
     private Animator animator;
+    private CharacterController Character;
     [SerializeField]
-    private CharacterController controller;
-    Vector3 ang,angcam = Vector3.zero;
+    private Transform GroundChecker;
+
+    
     public Transform cam;
 
+    [Header("MovementSetting")]
+    [SerializeField]
+    private float SmoothTurnTime = 0.1f;
+    public float idleSpeed = 0;
+    public float WalkingSpeed = 2;
+    public float RunningSpeed = 5;
     float smoothDampAngle;
-    float SmoothTurnTime = 0.1f;
+
+    [Header("GravitySettings")]
+    public bool ApplyGravity = true;
+    [SerializeField]
+    private float GravityIntensity = 5;
+    [SerializeField]
+    private float GroundedGravityIntensity = 1;
+    private bool isGrounded = false;
+    [SerializeField]
+    private LayerMask GroundCheckTo;
+    public float GravityVelocity = 0;
+
+    [Header("MouseSetting")]
+    public bool VisibleMouse = true;
+
+    
 
     private void Start()
     {
-        controller = gameObject.GetComponent<CharacterController>();
+        if (!VisibleMouse)
+        {
+            MouseSettingLock();
+        }
+        Character = gameObject.GetComponent<CharacterController>();
     }
     // Update is called once per frame
     void FixedUpdate()
     {
-        Move();
-        //Look();
+        GroundCheck();
+        Move(ApplyGravity);
     }
 
 
-    void Move()
+    void Move(bool HasGravity)
     {
         //if There is no Input 
         if (Input.GetAxis("Vertical") == 0 && Input.GetAxis("Horizontal") == 0)
         {
             //set speed to zero and play Idle animation
-            speed = 0;
+            speed = idleSpeed;
             animator.SetBool("isIdle" , true);
             //if Other animations is running stop it
             if (animator.GetBool("isRunning") == true || animator.GetBool("isWalking"))
@@ -50,7 +77,7 @@ public class Controller : MonoBehaviour
             //if sprint/left-shift is pressed start Running
             if (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)
             {
-                speed = 2;
+                speed = WalkingSpeed;
                 animator.SetBool("isWalking", true);
                 //if Running animations is running stop it
                 if (animator.GetBool("isRunning") == true)
@@ -60,7 +87,7 @@ public class Controller : MonoBehaviour
             }
             if(Input.GetAxis("Sprint") > 0)//if forward button is pressed start walking
             {
-                speed = 5;
+                speed = RunningSpeed;
                 animator.SetBool("isRunning", true);
             }
             
@@ -71,16 +98,27 @@ public class Controller : MonoBehaviour
                 float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y , targetAngle , ref smoothDampAngle , SmoothTurnTime);
                 transform.rotation = Quaternion.Euler(0f , smoothAngle , 0f);
                 Vector3 moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                controller.Move(moveDirection * speed * Time.deltaTime);
-             
-        } 
+                Character.Move(moveDirection * speed * Time.deltaTime); 
+        }
+        if (HasGravity && isGrounded)
+        {
+            GravityVelocity = GroundedGravityIntensity;
+        }
+        else if (HasGravity && !isGrounded)
+        {
+            GravityVelocity += GravityIntensity * Time.deltaTime;
+            Character.Move(Vector3.down * GravityVelocity);
+        }
     }
-    void Look()
+
+    void GroundCheck()
     {
-        //Looking Logic
-        ang = new Vector3(0, Input.GetAxis("Mouse X"), 0);
-        angcam = new Vector3(-Input.GetAxis("Mouse Y") * 0.5f, 0, 0);
-        transform.Rotate(ang);
-        cam.transform.Rotate(angcam);
+        isGrounded = Physics.CheckSphere(GroundChecker.position , 0.01f , GroundCheckTo);
+    }
+
+    void MouseSettingLock()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 }
