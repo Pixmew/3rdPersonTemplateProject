@@ -107,13 +107,13 @@ public class Controller : MonoBehaviour
         else if (HasGravity && !isGrounded)
         {
             GravityVelocity += GravityIntensity * Time.deltaTime;
-            Character.Move(Vector3.down * GravityVelocity);
         }
+        Character.Move(Vector3.down * GravityVelocity * Time.deltaTime);
     }
 
     void GroundCheck()
     {
-        isGrounded = Physics.CheckSphere(GroundChecker.position , 0.01f , GroundCheckTo);
+        isGrounded = Physics.CheckSphere(GroundChecker.position , 1f , GroundCheckTo);
     }
 
     void MouseSettingLock()
