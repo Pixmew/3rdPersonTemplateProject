@@ -4,6 +4,7 @@ using UnityEngine;
 
 
 
+
 public class Controller : MonoBehaviour
 {
     [SerializeField]
@@ -13,9 +14,9 @@ public class Controller : MonoBehaviour
     private CharacterController Character;
     [SerializeField]
     private Transform GroundChecker;
-
-    
     public Transform cam;
+    private GameObject Cameraa;
+
 
     [Header("MovementSetting")]
     [SerializeField]
@@ -25,16 +26,23 @@ public class Controller : MonoBehaviour
     public float RunningSpeed = 5;
     float smoothDampAngle;
 
+
     [Header("GravitySettings")]
     public bool ApplyGravity = true;
     [SerializeField]
     private float GravityIntensity = 5;
     [SerializeField]
     private float GroundedGravityIntensity = 1;
+
+
+    [Header("ActionCheck")]
     private bool isGrounded = false;
+    
+
     [SerializeField]
     private LayerMask GroundCheckTo;
     public float GravityVelocity = 0;
+
 
     [Header("MouseSetting")]
     public bool VisibleMouse = true;
@@ -43,6 +51,8 @@ public class Controller : MonoBehaviour
 
     private void Start()
     {
+        Cameraa = GameObject.Find("Camera");
+        cam = Camera.main.transform;
         if (!VisibleMouse)
         {
             MouseSettingLock();
@@ -62,43 +72,40 @@ public class Controller : MonoBehaviour
         //if There is no Input 
         if (Input.GetAxis("Vertical") == 0 && Input.GetAxis("Horizontal") == 0)
         {
-            //set speed to zero and play Idle animation
-            speed = idleSpeed;
-            animator.SetBool("isIdle" , true);
-            //if Other animations is running stop it
-            if (animator.GetBool("isRunning") == true || animator.GetBool("isWalking"))
+            if (speed >= 0)
             {
-                animator.SetBool("isRunning", false);
-                animator.SetBool("isWalking", false);
-            } 
+                speed -= 2f * Time.deltaTime;
+                animator.SetFloat("Speed" , speed);
+            }
         }
         else //if there is some input
         {
-            //if sprint/left-shift is pressed start Running
-            if (Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)
+            
+            if (speed < 2 && Input.GetAxis("Vertical") != 0 || Input.GetAxis("Horizontal") != 0)
             {
-                speed = WalkingSpeed;
-                animator.SetBool("isWalking", true);
-                //if Running animations is running stop it
-                if (animator.GetBool("isRunning") == true)
-                {
-                    animator.SetBool("isRunning", false);
-                }
-            }
-            if(Input.GetAxis("Sprint") > 0)//if forward button is pressed start walking
-            {
-                speed = RunningSpeed;
-                animator.SetBool("isRunning", true);
+                speed += 2f * Time.deltaTime;
+                animator.SetFloat("Speed", speed);
             }
             
+            if (speed < 5 && Input.GetAxis("Sprint") > 0)
+            {
+                speed += 2f * Time.deltaTime;
+                animator.SetFloat("Speed", speed);
+            }
+            else if (speed > 2)
+            {
+                speed -= 2.5f * Time.deltaTime;
+                animator.SetFloat("Speed", speed);
+            }
+            
+
             //Moving Logic  
             Vector3 MoveDirectionNormal = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")).normalized;
-            
-                float targetAngle = Mathf.Atan2(MoveDirectionNormal.x , MoveDirectionNormal.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-                float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y , targetAngle , ref smoothDampAngle , SmoothTurnTime);
-                transform.rotation = Quaternion.Euler(0f , smoothAngle , 0f);
-                Vector3 moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                Character.Move(moveDirection * speed * Time.deltaTime); 
+            float targetAngle = Mathf.Atan2(MoveDirectionNormal.x , MoveDirectionNormal.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+            float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y , targetAngle , ref smoothDampAngle , SmoothTurnTime);
+            transform.rotation = Quaternion.Euler(0f , smoothAngle , 0f);
+            Vector3 moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            Character.Move(moveDirection * speed * Time.deltaTime); 
         }
         if (HasGravity && isGrounded)
         {
@@ -120,5 +127,15 @@ public class Controller : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.gameObject.tag == "Player" && Input.GetKeyUp(KeyCode.E))
+        {
+            other.gameObject.GetComponent<Controller>().enabled = true;
+            gameObject.GetComponent<Controller>().enabled = false;
+            Debug.Log("Changed Player"); 
+        }
     }
 }
