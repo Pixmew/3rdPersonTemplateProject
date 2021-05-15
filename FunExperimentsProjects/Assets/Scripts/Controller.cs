@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Cinemachine;
 
 
 
@@ -10,12 +10,13 @@ public class Controller : MonoBehaviour
     [SerializeField]
     private float speed = 0;
     [SerializeField]
-    private Animator animator;
+    public Animator animator;
     private CharacterController Character;
     [SerializeField]
     private Transform GroundChecker;
     public Transform cam;
     private GameObject Cameraa;
+    public CinemachineFreeLook CinemaCamera;
 
 
     [Header("MovementSetting")]
@@ -129,13 +130,5 @@ public class Controller : MonoBehaviour
         Cursor.visible = false;
     }
 
-    private void OnTriggerStay(Collider other)
-    {
-        if (other.gameObject.tag == "Player" && Input.GetKeyUp(KeyCode.E))
-        {
-            other.gameObject.GetComponent<Controller>().enabled = true;
-            gameObject.GetComponent<Controller>().enabled = false;
-            Debug.Log("Changed Player"); 
-        }
-    }
+   
 }
